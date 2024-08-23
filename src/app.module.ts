@@ -1,43 +1,31 @@
-import { Module, OnModuleInit, Logger } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module';
-import { DataSource } from 'typeorm';
+import { User } from "./user/user.entity"
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'Sumit@12',
-      database: 'postgres',
-      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-      synchronize: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('DB_HOST'),
+        port: +configService.get<number>('DB_PORT'),
+        username: configService.get('DB_USERNAME'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_NAME'),
+        entities: [User],
+        synchronize: true,
+      }),
+      inject: [ConfigService],
+    }),
+    AuthModule,
     UserModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
-export class AppModule implements OnModuleInit {
-  private readonly logger = new Logger(AppModule.name);
-
-  constructor(private dataSource: DataSource) {}
-
-  async onModuleInit() {
-    try {
-      if (this.dataSource.isInitialized) {
-        this.logger.log('Database connection is already established');
-      } else {
-        await this.dataSource.initialize();
-        this.logger.log('Database connection successfully established');
-      }
-    } catch (error) {
-      this.logger.error('Failed to connect to the database', error);
-    }
-    this.logger.log('Nest application is starting...');
-  }
-}
+export class AppModule {}

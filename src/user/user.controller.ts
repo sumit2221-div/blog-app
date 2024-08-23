@@ -1,28 +1,33 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
-import { UserService } from "./user.service"
-import { User } from './user.entity.';
+import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { UserService } from './user.service';
+import { User } from './user.entity';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Post()
+  async create(@Body() user: Partial<User>): Promise<User> {
+    return this.userService.create(user);
+  }
+
   @Get()
-  findAll(): Promise<User[]> {
+  async findAll(): Promise<User[]> {
     return this.userService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<User> {
-    return this.userService.findOne(+id);
+  async findById(@Param('id') id: number): Promise<User | undefined> {
+    return this.userService.findById(id);
   }
 
-  @Post()
-  create(@Body() user: User): Promise<User> {
-    return this.userService.create(user);
+  @Put(':id')
+  async update(@Param('id') id: number, @Body() user: Partial<User>): Promise<User> {
+    return this.userService.update(id, user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<void> {
-    return this.userService.remove(+id);
+  async remove(@Param('id') id: number): Promise<void> {
+    return this.userService.remove(id);
   }
 }
